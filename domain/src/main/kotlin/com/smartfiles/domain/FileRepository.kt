@@ -1,0 +1,21 @@
+package com.smartfiles.domain
+
+import com.smartfiles.core.model.DiscoveredFile
+import com.smartfiles.core.model.FileItem
+import kotlinx.coroutines.flow.Flow
+
+/** Repository contract for metadata storage + change detection. */
+interface FileRepository {
+    /**
+     * Transactionally syncs discovered files against cached signatures using
+     * the injected [changeDetector], upserting metadata and returning the ids
+     * of files that are new or changed and therefore need deep processing.
+     */
+    suspend fun syncScan(files: List<DiscoveredFile>): List<Long>
+    suspend fun upsertDiscoveredFiles(files: List<DiscoveredFile>)
+    fun observeFile(fileId: Long): Flow<FileItem?>
+    fun observeAllFiles(): Flow<List<FileItem>>
+    fun observeFilesByAlbum(albumId: Long): Flow<List<FileItem>>
+    suspend fun markDeletedIfMissing(existingUris: Set<String>)
+    suspend fun countIndexedFiles(): Long
+}
