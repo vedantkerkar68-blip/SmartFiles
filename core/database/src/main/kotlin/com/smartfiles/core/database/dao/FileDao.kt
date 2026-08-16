@@ -78,6 +78,59 @@ interface FileDao {
 
     @Query("SELECT fileId FROM files WHERE uri = :uri AND fileId != :excludeId")
     suspend fun findSameUri(uri: String, excludeId: Long): Long?
+
+    @Query("SELECT docType FROM files WHERE fileId = :fileId")
+    suspend fun docTypeOf(fileId: Long): DocType?
+
+    @Query("SELECT displayName, extractedText FROM files WHERE fileId = :fileId")
+    suspend fun classificationSource(fileId: Long): ClassificationSourceRow?
+
+    @Query(
+        """
+        SELECT fileId, displayName, extractedText FROM files
+        WHERE processingStatus IN ('CONTENT_DONE', 'CLASSIFIED')
+          AND primaryAlbumId IS NULL AND isDeletedFromSource = 0
+        ORDER BY dateFirstIndexed DESC LIMIT :limit
+        """,
+    )
+    suspend fun classificationCandidates(limit: Int): List<ClassificationCandidateRow>
+
+    @Query("SELECT COUNT(*) FROM files WHERE primaryAlbumId IS NULL AND isDeletedFromSource = 0")
+    suspend fun uncategorizedFileCount(): Int
+
+    @Query(
+        """
+        SELECT fileId, extractedText, primaryAlbumId FROM files
+        WHERE primaryAlbumId IS NOT NULL AND extractedText IS NOT NULL AND extractedText != ''
+        ORDER BY dateFirstIndexed DESC LIMIT :limit
+        """,
+    )
+    suspend fun recentlyClassifiedProfiles(limit: Int): List<ClassifiedProfileRow>
+
+    @Query(
+        """
+        SELECT extractedText FROM files
+        WHERE extractedText IS NOT NULL AND extractedText != '' AND isDeletedFromSource = 0
+        ORDER BY dateFirstIndexed DESC LIMIT :limit
+        """,
+    )
+    suspend fun sampleExtractedTexts(limit: Int): List<ExtractedTextRow>
 }
 
+data class ExtractedTextRow(val extractedText: String)
+
 data class PerceptualHashRow(val fileId: Long, val perceptualHash: Long)
+
+data class ClassificationSourceRow(val displayName: String, val extractedText: String?)
+
+data class ClassificationCandidateRow(
+    val fileId: Long,
+    val displayName: String,
+    val extractedText: String?,
+)
+
+data class ClassifiedProfileRow(
+    val fileId: Long,
+    val extractedText: String,
+    val primaryAlbumId: Long?,
+)

@@ -20,4 +20,14 @@ interface FileRepository {
     suspend fun countIndexedFiles(): Long
     /** Persists the result of a Level-2 content extraction pass. */
     suspend fun updateProcessingResult(fileId: Long, result: ExtractionResult)
+    /** Classification source text (name + extracted content) for a file. */
+    suspend fun classificationSource(fileId: Long): ClassificationSource?
+    /** Advances a file to Level-3 (CLASSIFIED) once classification succeeds. */
+    suspend fun markClassified(fileId: Long)
 }
+
+/** Input to the classification engine (LLD §4.4 RepresentativeTextBuilder input). */
+data class ClassificationSource(
+    val displayName: String,
+    val extractedText: String?,
+)

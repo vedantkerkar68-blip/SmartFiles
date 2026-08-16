@@ -149,3 +149,48 @@ permissions: file access is SAF `OpenDocumentTree` only.
   multiplied to millis to stay consistent with the rest of the app.
 - FTS content entity `files_fts` and the new `indexed_folders` table coexist in
   the version-1 schema; no migration needed until the schema changes.
+
+## Classification & albums (Phase 3)
+
+- **Confidence scoring renormalizes over available evidence.** The LLD §4.3a
+  formula (`0.45·keyword + 0.35·centroid + 0.15·cluster + 0.05·history`) is kept
+  exactly, but components whose data source does not exist yet (album-centroid
+  cosine until Phase 4, correction history until Phase 6) contribute their
+  weight to *neither* numerator nor denominator (`ConfidenceScorer`). The
+  returned score stays on the 0..1 scale and `Verdict.coverage` reports what
+  fraction of the evidence was real, so a high score is never fabricated from
+  missing signals. With only keyword + cluster agreement present (Phase 3),
+  coverage is 0.60 and strong keyword matches can still clear the 85% gate.
+- **Cluster agreement is computed from term-profile overlap, not embeddings.**
+  `existingClusterAgreement` = fraction of up to 40 recently-classified files
+  whose bag-of-words profile is cosine-similar (≥0.4) to the target *and* whose
+  album matches the predicted top-level album. Real, bounded, corpus-relative.
+- **Dynamic sub-album creation is gated on distinctness evidence.** Per LLD
+  §4.3b, AUTO_CREATE requires `size ≥ 5 ∧ cohesion ≥ 0.78 ∧ distinctness ≥ 0.35`.
+  Distinctness is `1 − max cosine to existing album centroids`, which does not
+  exist before Phase 4 embeddings, so AUTO_CREATE is honestly held back; the
+  suggest branch (`size ≥ 3 ∧ cohesion ≥ 0.65`) runs today over term-profile
+  cohesion and surfaces draft `AUTO_CREATED` sub-albums plus per-file
+  suggestions. Greedy single-pass clustering over a bounded candidate set
+  (400 files, min similarity 0.5), throttled to once per 10 minutes.
+- **Structured spans use local regex, not ML Kit Entity Extraction.** The LLD
+  names the ML Kit Entity Extraction API, which downloads models at runtime —
+  against the local-first/no-network stance. `DateSpanExtractor` emits
+  `date:YYYY-MM-DD` / `year:YYYY` metadata tags instead; addresses are deferred
+  with the entity API until a user opts into network-backed processing.
+- **Tags are persisted and feed FTS.** `TagRepositoryImpl` replaces a file's
+  tag set (dedup by name) and refreshes the denormalized `files.tagsConcat`, so
+  keyword search over tags works once the FTS row updates (Phase 4).
+- **Photos is media-type-driven.** Images whose extraction yields no text are
+  assigned to the seeded Photos album at 0.90 (media-type evidence) unless a
+  content category scores higher; photos stay searchable either way.
+- **Schema bumped to v2** to add the `album_suggestions` table (persisted
+  suggestions survive process death and back the Albums UI accept/reject flow).
+  `fallbackToDestructiveMigration` is still active pre-release; real migration
+  tests remain a Phase-7 hardening item.
+- **`AlbumSuggestion` carries `fileName`** for display; rejected (file, album)
+  pairings are remembered so the same pairing is never re-suggested, mirroring
+  the "not a duplicate" correction pattern.
+- **Queue targetLevel now means what it says.** `TARGET_LEVEL_ALL = 3`;
+  `DeepProcessingWorker` advances a file to Level-2 (extraction), then Level-3
+  (classification + tags + assign/suggest) for items enqueued to Level-3.

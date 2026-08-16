@@ -45,6 +45,7 @@ data class AlbumItem(
     val confidence: Float? = null,
     val createdAutomatically: Boolean = false,
     val fileCount: Int = 0,
+    val iconOrEmoji: String? = null,
 )
 
 /** A file assignable to one or more albums, used for the self-referential tree. */
@@ -66,4 +67,5 @@ data class AlbumSuggestion(
     val suggestedAlbumId: Long,
     val confidence: Float,
     val reasons: List<String>,
+    val fileName: String? = null,
 )

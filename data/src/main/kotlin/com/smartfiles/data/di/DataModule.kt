@@ -12,6 +12,7 @@ import com.smartfiles.core.database.dao.FileDao
 import com.smartfiles.core.database.dao.FolderDao
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.dao.SearchDao
+import com.smartfiles.core.database.dao.TagDao
 import com.smartfiles.core.datastore.SettingsDataStore
 import com.smartfiles.core.filesystem.MediaStoreFileDiscoverySource
 import com.smartfiles.core.filesystem.SafFileSource
@@ -45,6 +46,7 @@ object DataModule {
     @Provides fun provideQueueDao(db: AppDatabase): QueueDao = db.queueDao()
     @Provides fun provideSearchDao(db: AppDatabase): SearchDao = db.searchDao()
     @Provides fun provideFolderDao(db: AppDatabase): FolderDao = db.folderDao()
+    @Provides fun provideTagDao(db: AppDatabase): TagDao = db.tagDao()
 
     @Provides
     @Singleton

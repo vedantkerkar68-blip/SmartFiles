@@ -9,7 +9,9 @@ import com.smartfiles.core.database.dao.FileDao
 import com.smartfiles.core.database.dao.FolderDao
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.dao.SearchDao
+import com.smartfiles.core.database.dao.TagDao
 import com.smartfiles.core.database.entity.AlbumEntity
+import com.smartfiles.core.database.entity.AlbumSuggestionEntity
 import com.smartfiles.core.database.entity.DuplicateGroupEntity
 import com.smartfiles.core.database.entity.DuplicateGroupMemberEntity
 import com.smartfiles.core.database.entity.EmbeddingEntity
@@ -36,8 +38,9 @@ import com.smartfiles.core.database.entity.UserCorrectionEntity
         DuplicateGroupMemberEntity::class,
         IndexedFolderEntity::class,
         FileFtsEntity::class,
+        AlbumSuggestionEntity::class,
     ],
-    version = 1,
+    version = 2,
     // Schema JSON is exported to core/database/schemas (KSP room.schemaLocation)
     // and is the basis for migrations + migration tests.
     exportSchema = true,
@@ -50,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun queueDao(): QueueDao
     abstract fun searchDao(): SearchDao
     abstract fun folderDao(): FolderDao
+    abstract fun tagDao(): TagDao
 
     companion object {
         const val NAME = "smartfiles.db"

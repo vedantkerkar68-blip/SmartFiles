@@ -3,6 +3,7 @@ package com.smartfiles.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartfiles.core.common.AppLogger
+import com.smartfiles.domain.AlbumRepository
 import com.smartfiles.domain.BackgroundWorkScheduler
 import com.smartfiles.domain.FileRepository
 import com.smartfiles.domain.FolderRepository
@@ -23,6 +24,7 @@ class HomeViewModel @Inject constructor(
     private val workScheduler: BackgroundWorkScheduler,
     settingsRepository: SettingsRepository,
     fileRepository: FileRepository,
+    albumRepository: AlbumRepository,
     private val logger: AppLogger,
 ) : ViewModel() {
 
@@ -32,12 +34,13 @@ class HomeViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = combine(
         settingsRepository.settings,
         fileRepository.observeAllFiles(),
+        albumRepository.observeAlbumTree(),
         _transient,
-    ) { settings, files, transient ->
+    ) { settings, files, tree, transient ->
         HomeUiState(
             settings = settings,
             indexedFileCount = files.size,
-            indexedAlbumCount = 0,
+            indexedAlbumCount = tree.size,
             isScanning = transient.isScanning,
             scanRequestedAt = transient.scanRequestedAt,
             error = transient.error,

@@ -1,0 +1,985 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 2,
+    "identityHash": "c7b332389449bd977fa1c1e51a27c943",
+    "entities": [
+      {
+        "tableName": "files",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `uri` TEXT NOT NULL, `displayName` TEXT NOT NULL, `mimeType` TEXT NOT NULL, `sizeBytes` INTEGER NOT NULL, `dateModifiedSource` INTEGER NOT NULL, `dateFirstIndexed` INTEGER NOT NULL, `sha256Hash` TEXT, `perceptualHash` INTEGER, `docType` TEXT NOT NULL, `widthPx` INTEGER, `heightPx` INTEGER, `extractedText` TEXT, `ocrApplied` INTEGER NOT NULL, `ocrConfidenceAvg` REAL, `processingStatus` TEXT NOT NULL, `processingLevel` INTEGER NOT NULL, `primaryAlbumId` INTEGER, `classificationConfidence` REAL, `isDeletedFromSource` INTEGER NOT NULL, `lastError` TEXT, `tagsConcat` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "uri",
+            "columnName": "uri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "mimeType",
+            "columnName": "mimeType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sizeBytes",
+            "columnName": "sizeBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateModifiedSource",
+            "columnName": "dateModifiedSource",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dateFirstIndexed",
+            "columnName": "dateFirstIndexed",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sha256Hash",
+            "columnName": "sha256Hash",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "perceptualHash",
+            "columnName": "perceptualHash",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "docType",
+            "columnName": "docType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "widthPx",
+            "columnName": "widthPx",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "heightPx",
+            "columnName": "heightPx",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "extractedText",
+            "columnName": "extractedText",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "ocrApplied",
+            "columnName": "ocrApplied",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ocrConfidenceAvg",
+            "columnName": "ocrConfidenceAvg",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "processingStatus",
+            "columnName": "processingStatus",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "processingLevel",
+            "columnName": "processingLevel",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "primaryAlbumId",
+            "columnName": "primaryAlbumId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "classificationConfidence",
+            "columnName": "classificationConfidence",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "isDeletedFromSource",
+            "columnName": "isDeletedFromSource",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastError",
+            "columnName": "lastError",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tagsConcat",
+            "columnName": "tagsConcat",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "fileId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_files_uri",
+            "unique": false,
+            "columnNames": [
+              "uri"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_files_uri` ON `${TABLE_NAME}` (`uri`)"
+          },
+          {
+            "name": "index_files_sha256Hash",
+            "unique": false,
+            "columnNames": [
+              "sha256Hash"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_files_sha256Hash` ON `${TABLE_NAME}` (`sha256Hash`)"
+          },
+          {
+            "name": "index_files_processingStatus",
+            "unique": false,
+            "columnNames": [
+              "processingStatus"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_files_processingStatus` ON `${TABLE_NAME}` (`processingStatus`)"
+          },
+          {
+            "name": "index_files_primaryAlbumId",
+            "unique": false,
+            "columnNames": [
+              "primaryAlbumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_files_primaryAlbumId` ON `${TABLE_NAME}` (`primaryAlbumId`)"
+          }
+        ]
+      },
+      {
+        "tableName": "albums",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`albumId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `parentAlbumId` INTEGER, `type` TEXT NOT NULL, `confidence` REAL, `createdAutomatically` INTEGER NOT NULL, `centroidEmbedding` BLOB, `iconOrEmoji` TEXT, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`parentAlbumId`) REFERENCES `albums`(`albumId`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "fields": [
+          {
+            "fieldPath": "albumId",
+            "columnName": "albumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "parentAlbumId",
+            "columnName": "parentAlbumId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "type",
+            "columnName": "type",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "createdAutomatically",
+            "columnName": "createdAutomatically",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "centroidEmbedding",
+            "columnName": "centroidEmbedding",
+            "affinity": "BLOB"
+          },
+          {
+            "fieldPath": "iconOrEmoji",
+            "columnName": "iconOrEmoji",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "albumId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_albums_parentAlbumId",
+            "unique": false,
+            "columnNames": [
+              "parentAlbumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_albums_parentAlbumId` ON `${TABLE_NAME}` (`parentAlbumId`)"
+          },
+          {
+            "name": "index_albums_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_albums_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "albums",
+            "onDelete": "SET NULL",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "parentAlbumId"
+            ],
+            "referencedColumns": [
+              "albumId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "file_album_cross_ref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileId` INTEGER NOT NULL, `albumId` INTEGER NOT NULL, `confidence` REAL NOT NULL, `assignedBy` TEXT NOT NULL, `assignedAt` INTEGER NOT NULL, PRIMARY KEY(`fileId`, `albumId`), FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`albumId`) REFERENCES `albums`(`albumId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "albumId",
+            "columnName": "albumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedBy",
+            "columnName": "assignedBy",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "assignedAt",
+            "columnName": "assignedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "fileId",
+            "albumId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_file_album_cross_ref_albumId",
+            "unique": false,
+            "columnNames": [
+              "albumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_file_album_cross_ref_albumId` ON `${TABLE_NAME}` (`albumId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          },
+          {
+            "table": "albums",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "albumId"
+            ],
+            "referencedColumns": [
+              "albumId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "tags",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`tagId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `category` TEXT)",
+        "fields": [
+          {
+            "fieldPath": "tagId",
+            "columnName": "tagId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "tagId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_tags_name",
+            "unique": true,
+            "columnNames": [
+              "name"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_tags_name` ON `${TABLE_NAME}` (`name`)"
+          }
+        ]
+      },
+      {
+        "tableName": "file_tag_cross_ref",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileId` INTEGER NOT NULL, `tagId` INTEGER NOT NULL, `confidence` REAL NOT NULL, PRIMARY KEY(`fileId`, `tagId`), FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`tagId`) REFERENCES `tags`(`tagId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "tagId",
+            "columnName": "tagId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "fileId",
+            "tagId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_file_tag_cross_ref_tagId",
+            "unique": false,
+            "columnNames": [
+              "tagId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_file_tag_cross_ref_tagId` ON `${TABLE_NAME}` (`tagId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          },
+          {
+            "table": "tags",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "tagId"
+            ],
+            "referencedColumns": [
+              "tagId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "embeddings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`fileId` INTEGER NOT NULL, `modelVersion` TEXT NOT NULL, `vector` BLOB NOT NULL, `dim` INTEGER NOT NULL, `generatedAt` INTEGER NOT NULL, PRIMARY KEY(`fileId`, `modelVersion`), FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelVersion",
+            "columnName": "modelVersion",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vector",
+            "columnName": "vector",
+            "affinity": "BLOB",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dim",
+            "columnName": "dim",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "generatedAt",
+            "columnName": "generatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "fileId",
+            "modelVersion"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_embeddings_fileId",
+            "unique": false,
+            "columnNames": [
+              "fileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_embeddings_fileId` ON `${TABLE_NAME}` (`fileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "processing_queue",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`queueId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fileId` INTEGER NOT NULL, `targetLevel` INTEGER NOT NULL, `priority` INTEGER NOT NULL, `retryCount` INTEGER NOT NULL, `lastAttemptAt` INTEGER, `nextEligibleAt` INTEGER NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "queueId",
+            "columnName": "queueId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetLevel",
+            "columnName": "targetLevel",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "priority",
+            "columnName": "priority",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "retryCount",
+            "columnName": "retryCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAttemptAt",
+            "columnName": "lastAttemptAt",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "nextEligibleAt",
+            "columnName": "nextEligibleAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "queueId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_processing_queue_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_processing_queue_status` ON `${TABLE_NAME}` (`status`)"
+          },
+          {
+            "name": "index_processing_queue_fileId",
+            "unique": false,
+            "columnNames": [
+              "fileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_processing_queue_fileId` ON `${TABLE_NAME}` (`fileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "user_corrections",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`correctionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fileId` INTEGER NOT NULL, `previousAlbumId` INTEGER, `correctedAlbumId` INTEGER, `correctionType` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `notDuplicatePair` TEXT, FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "correctionId",
+            "columnName": "correctionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "previousAlbumId",
+            "columnName": "previousAlbumId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "correctedAlbumId",
+            "columnName": "correctedAlbumId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "correctionType",
+            "columnName": "correctionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "notDuplicatePair",
+            "columnName": "notDuplicatePair",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "correctionId"
+          ]
+        },
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "duplicate_groups",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `groupType` TEXT NOT NULL, `representativeFileId` INTEGER, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "groupType",
+            "columnName": "groupType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "representativeFileId",
+            "columnName": "representativeFileId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "groupId"
+          ]
+        }
+      },
+      {
+        "tableName": "duplicate_group_members",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`groupId` INTEGER NOT NULL, `fileId` INTEGER NOT NULL, `similarityScore` REAL NOT NULL, PRIMARY KEY(`groupId`, `fileId`), FOREIGN KEY(`groupId`) REFERENCES `duplicate_groups`(`groupId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "groupId",
+            "columnName": "groupId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "similarityScore",
+            "columnName": "similarityScore",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "groupId",
+            "fileId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_duplicate_group_members_fileId",
+            "unique": false,
+            "columnNames": [
+              "fileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_duplicate_group_members_fileId` ON `${TABLE_NAME}` (`fileId`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "duplicate_groups",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "groupId"
+            ],
+            "referencedColumns": [
+              "groupId"
+            ]
+          },
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "indexed_folders",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`folderUri` TEXT NOT NULL, `grantedAt` INTEGER NOT NULL, `lastValidatedAt` INTEGER NOT NULL, `permissionState` TEXT NOT NULL, PRIMARY KEY(`folderUri`))",
+        "fields": [
+          {
+            "fieldPath": "folderUri",
+            "columnName": "folderUri",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "grantedAt",
+            "columnName": "grantedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastValidatedAt",
+            "columnName": "lastValidatedAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "permissionState",
+            "columnName": "permissionState",
+            "affinity": "TEXT",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "folderUri"
+          ]
+        }
+      },
+      {
+        "tableName": "files_fts",
+        "createSql": "CREATE VIRTUAL TABLE IF NOT EXISTS `${TABLE_NAME}` USING FTS4(`displayName` TEXT NOT NULL, `extractedText` TEXT, `tagsConcat` TEXT, content=`files`)",
+        "fields": [
+          {
+            "fieldPath": "displayName",
+            "columnName": "displayName",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "extractedText",
+            "columnName": "extractedText",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "tagsConcat",
+            "columnName": "tagsConcat",
+            "affinity": "TEXT"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": []
+        },
+        "ftsVersion": "FTS4",
+        "ftsOptions": {
+          "tokenizer": "simple",
+          "tokenizerArgs": [],
+          "contentTable": "files",
+          "languageIdColumnName": "",
+          "matchInfo": "FTS4",
+          "notIndexedColumns": [],
+          "prefixSizes": [],
+          "preferredOrder": "ASC"
+        },
+        "contentSyncTriggers": [
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_files_fts_BEFORE_UPDATE BEFORE UPDATE ON `files` BEGIN DELETE FROM `files_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_files_fts_BEFORE_DELETE BEFORE DELETE ON `files` BEGIN DELETE FROM `files_fts` WHERE `docid`=OLD.`rowid`; END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_files_fts_AFTER_UPDATE AFTER UPDATE ON `files` BEGIN INSERT INTO `files_fts`(`docid`, `displayName`, `extractedText`, `tagsConcat`) VALUES (NEW.`rowid`, NEW.`displayName`, NEW.`extractedText`, NEW.`tagsConcat`); END",
+          "CREATE TRIGGER IF NOT EXISTS room_fts_content_sync_files_fts_AFTER_INSERT AFTER INSERT ON `files` BEGIN INSERT INTO `files_fts`(`docid`, `displayName`, `extractedText`, `tagsConcat`) VALUES (NEW.`rowid`, NEW.`displayName`, NEW.`extractedText`, NEW.`tagsConcat`); END"
+        ]
+      },
+      {
+        "tableName": "album_suggestions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`suggestionId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `fileId` INTEGER NOT NULL, `sourceAlbumId` INTEGER, `suggestedAlbumId` INTEGER NOT NULL, `confidence` REAL NOT NULL, `reasons` TEXT NOT NULL, `status` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, FOREIGN KEY(`fileId`) REFERENCES `files`(`fileId`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`suggestedAlbumId`) REFERENCES `albums`(`albumId`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "suggestionId",
+            "columnName": "suggestionId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fileId",
+            "columnName": "fileId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sourceAlbumId",
+            "columnName": "sourceAlbumId",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "suggestedAlbumId",
+            "columnName": "suggestedAlbumId",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "confidence",
+            "columnName": "confidence",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reasons",
+            "columnName": "reasons",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "status",
+            "columnName": "status",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "suggestionId"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_album_suggestions_fileId",
+            "unique": false,
+            "columnNames": [
+              "fileId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_suggestions_fileId` ON `${TABLE_NAME}` (`fileId`)"
+          },
+          {
+            "name": "index_album_suggestions_suggestedAlbumId",
+            "unique": false,
+            "columnNames": [
+              "suggestedAlbumId"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_suggestions_suggestedAlbumId` ON `${TABLE_NAME}` (`suggestedAlbumId`)"
+          },
+          {
+            "name": "index_album_suggestions_status",
+            "unique": false,
+            "columnNames": [
+              "status"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_album_suggestions_status` ON `${TABLE_NAME}` (`status`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "files",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "fileId"
+            ],
+            "referencedColumns": [
+              "fileId"
+            ]
+          },
+          {
+            "table": "albums",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "suggestedAlbumId"
+            ],
+            "referencedColumns": [
+              "albumId"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'c7b332389449bd977fa1c1e51a27c943')"
+    ]
+  }
+}

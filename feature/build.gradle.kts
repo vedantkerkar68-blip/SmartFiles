@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons)
     implementation(libs.compose.foundation)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)

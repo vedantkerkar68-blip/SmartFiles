@@ -11,6 +11,8 @@ import com.smartfiles.core.model.FileItem
 import com.smartfiles.domain.FileRepository
 import com.smartfiles.domain.ExtractionResult
 import com.smartfiles.domain.ExtractionSource
+import com.smartfiles.domain.ClassificationSource
+import com.smartfiles.core.model.ProcessingStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -92,6 +94,13 @@ class FileRepositoryImpl @Inject constructor(
         )
     }
 
+    override suspend fun classificationSource(fileId: Long): ClassificationSource? =
+        fileDao.classificationSource(fileId)?.let { ClassificationSource(it.displayName, it.extractedText) }
+
+    override suspend fun markClassified(fileId: Long) {
+        fileDao.updateStatus(fileId, ProcessingStatus.CLASSIFIED, LEVEL_CLASSIFIED)
+    }
+
     private fun FileEntity.toItem() = FileItem(
         fileId = fileId,
         uri = uri,
@@ -106,4 +115,8 @@ class FileRepositoryImpl @Inject constructor(
         classificationConfidence = classificationConfidence,
         extractedTextPreview = extractedText?.take(512),
     )
+
+    companion object {
+        private const val LEVEL_CLASSIFIED = 3
+    }
 }

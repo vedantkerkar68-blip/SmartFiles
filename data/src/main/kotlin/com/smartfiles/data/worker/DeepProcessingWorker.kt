@@ -13,6 +13,8 @@ import com.smartfiles.core.common.AppLogger
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.entity.ProcessingQueueEntity
 import com.smartfiles.core.model.FileItem
+import com.smartfiles.domain.AlbumRepository
+import com.smartfiles.domain.ClassifyFileUseCase
 import com.smartfiles.domain.ContentExtractor
 import com.smartfiles.domain.FileRepository
 import dagger.assisted.Assisted
@@ -23,10 +25,11 @@ import kotlinx.coroutines.withContext
 
 /**
  * Drains the persistent processing queue, advancing each file through Level-2
- * content extraction (LLD §4.2, §4.10). Batch size scales with charging+idle
- * state. A killed/rescheduled worker resumes safely because each file's result
- * is committed to Room only after it completes. Anything enqueued while the
- * loop runs is picked up on the next iteration; stragglers/backoff are
+ * content extraction (LLD §4.2, §4.10) and, for files enqueued to Level-3,
+ * through classification + tagging (LLD §4.3). Batch size scales with
+ * charging+idle state. A killed/rescheduled worker resumes safely because each
+ * file's result is committed to Room only after it completes. Anything enqueued
+ * while the loop runs is picked up on the next iteration; stragglers/backoff are
  * re-triggered by ProcessingQueueRepositoryImpl.enqueue and periodic scans.
  */
 @HiltWorker
@@ -36,6 +39,8 @@ class DeepProcessingWorker @AssistedInject constructor(
     private val queueDao: QueueDao,
     private val fileRepository: FileRepository,
     private val contentExtractor: ContentExtractor,
+    private val classifyFileUseCase: ClassifyFileUseCase,
+    private val albumRepository: AlbumRepository,
     private val logger: AppLogger,
 ) : CoroutineWorker(appContext, params) {
 
@@ -51,6 +56,7 @@ class DeepProcessingWorker @AssistedInject constructor(
                 // A short batch means the queue is nearly drained; stop here.
                 if (batch.size < batchSize) break
             }
+            reconcileAlbums()
             Result.success()
         } catch (e: Exception) {
             logger.e(TAG, "deep processing failed", e)
@@ -70,11 +76,25 @@ class DeepProcessingWorker @AssistedInject constructor(
             }
             val extraction = contentExtractor.extract(file)
             fileRepository.updateProcessingResult(item.fileId, extraction)
+            if (item.targetLevel >= LEVEL_CLASSIFIED) {
+                // Level-3: classify + tag + auto-assign or offer a suggestion.
+                classifyFileUseCase(item.fileId)
+                fileRepository.markClassified(item.fileId)
+            }
             queueDao.markDone(item.queueId)
         } catch (e: Exception) {
             logger.w(TAG, "processing failed for queue item ${item.queueId}", e)
             val backoff = RETRY_INITIAL_MS shl item.retryCount.coerceAtMost(MAX_EXPONENT)
             queueDao.markFailed(item.queueId, now, now + backoff)
+        }
+    }
+
+    /** Best-effort cluster sweep; never fails the worker over it. */
+    private suspend fun reconcileAlbums() {
+        try {
+            albumRepository.reconcileDynamicAlbums()
+        } catch (e: Exception) {
+            logger.w(TAG, "album reconciliation failed", e)
         }
     }
 
@@ -99,5 +119,6 @@ class DeepProcessingWorker @AssistedInject constructor(
         private const val DEEP_BATCH_CHARGING = 20
         private const val RETRY_INITIAL_MS = 15_000L
         private const val MAX_EXPONENT = 4
+        private const val LEVEL_CLASSIFIED = 3
     }
 }

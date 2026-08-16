@@ -55,6 +55,7 @@ fun HomeScreen(
                     Text("Indexed files", style = MaterialTheme.typography.labelMedium)
                     Text("${state.indexedFileCount}", style = MaterialTheme.typography.headlineMedium)
                     Text("Auto-organize threshold: ${state.settings.autoClassifyThreshold}", style = MaterialTheme.typography.bodyMedium)
+                    Text("Organized albums: ${state.indexedAlbumCount}", style = MaterialTheme.typography.bodyMedium)
                 }
             }
 
