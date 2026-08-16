@@ -12,15 +12,17 @@ import com.smartfiles.domain.ExtractionSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 /**
  * Content extraction entry point (LLD §4.2). Dispatches to PdfBox for
- * text-layer PDFs and ML Kit for images (OCR + labels). PdfBox page-rendering
- * OCR fallback for scanned PDFs is added in Phase 2 (see DECISIONS.md).
+ * text-layer PDFs and ML Kit for images (OCR + labels). When a PDF has no
+ * usable text layer it is page-rendered and OCR'd via [ScannedPdfOcrExtractor].
  */
 class ContentExtractorImpl(
     private val context: Context,
     private val pdfExtractor: PdfBoxTextExtractor,
+    private val scannedPdfOcr: ScannedPdfOcrExtractor,
     private val logger: AppLogger,
 ) : ContentExtractor {
 
@@ -44,16 +46,54 @@ class ContentExtractorImpl(
             context.contentResolver.openInputStream(Uri.parse(file.uri))?.use { input ->
                 pdfExtractor.extractText(input)
             }
-        } ?: return ExtractionResult(source = ExtractionSource.NONE)
+        }
 
-        if (text.isBlank() || text.length < minPdfChars) {
-            // Scanned / textless PDF: page-rendered OCR lands in Phase 2 with PDFRenderer.
+        if (!text.isNullOrBlank() && text.length >= minPdfChars) {
+            return ExtractionResult(
+                text = text,
+                source = ExtractionSource.TEXT_LAYER,
+            )
+        }
+
+        // Scanned / textless PDF: render pages and OCR them.
+        val temp = copyToTemp(file)
+        if (temp == null) {
+            logger.w(TAG, "could not stage scanned PDF for OCR: ${file.displayName}")
             return ExtractionResult(source = ExtractionSource.NONE)
         }
-        return ExtractionResult(
-            text = text,
-            source = ExtractionSource.TEXT_LAYER,
-        )
+        return try {
+            val ocr = scannedPdfOcr.ocr(temp)
+            if (ocr != null && ocr.text.isNotBlank()) {
+                ExtractionResult(
+                    text = ocr.text,
+                    source = ExtractionSource.OCR,
+                    ocrConfidenceAvg = ocr.avgConfidence,
+                )
+            } else {
+                ExtractionResult(source = ExtractionSource.NONE)
+            }
+        } finally {
+            temp.delete()
+        }
+    }
+
+    private suspend fun copyToTemp(file: FileItem): File? = withContext(Dispatchers.IO) {
+        try {
+            val uri = Uri.parse(file.uri)
+            val out = File(context.cacheDir, "scan_${file.fileId}_${System.nanoTime()}.pdf")
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                out.outputStream().use { output -> input.copyTo(output) }
+            } ?: return@withContext null
+            if (out.length() <= 0L) {
+                out.delete()
+                null
+            } else {
+                out
+            }
+        } catch (e: Exception) {
+            logger.w(TAG, "staging scanned PDF failed", e)
+            null
+        }
     }
 
     private suspend fun extractImage(file: FileItem): ExtractionResult {

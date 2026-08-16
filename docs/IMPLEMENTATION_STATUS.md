@@ -5,13 +5,13 @@ built, what is missing, and known deviations. Companion: `docs/DECISIONS.md`.
 
 ## Overall verdict
 
-**NOT a complete/full running app.** Phase 0 (build foundation) and Phase 1
-(storage + database) are complete; Phase 2 (content extraction, driven by the
-deep-processing worker) is functional but still missing the scanned-PDF OCR
-fallback; Phases 3–7 are not. The repo is a compile-clean app with a working
-vertical slice: pick a SAF folder → persistence + background metadata scan →
-MediaStore auto-discovery → Level-1 metadata lands in Room → Level-2 extraction
-is drained from a persistent queue → counts/index show on Home.
+**NOT a complete/full running app.** Phase 0 (build foundation), Phase 1
+(storage + database), and Phase 2 (content extraction, incl. scanned-PDF OCR
+fallback) are complete; Phases 3–7 are not. The repo is a compile-clean app
+with a working vertical slice: pick a SAF folder → persistence + background
+metadata scan → MediaStore auto-discovery → Level-1 metadata lands in Room →
+Level-2 extraction is drained from a persistent queue → counts/index show on
+Home.
 
 ## Phase status
 
@@ -19,7 +19,7 @@ is drained from a persistent queue → counts/index show on Home.
 |---|---|---|---|
 | 0 — Build foundation | Clean build | **COMPLETE** | `assembleDebug` → `app/build/outputs/apk/debug/app-debug.apk` (≈130 MB debug). Hilt/KSP/Compose/navigation all wired. |
 | 1 — Storage + database | Folder → real files in DB | **COMPLETE** | SAF walk + Room entities/DAOs + syncScan + queue tables + persistable-permission bookkeeping (`indexed_folders`, `FolderPermissionState`, `PermissionValidationWorker`) + MediaStore auto-discovery + `core:workmanager` with `MetadataScanWorker`/`DeepProcessingWorker`/`UserTriggeredProcessingWorker` + schema export (`core/database/schemas`). Still uses `fallbackToDestructiveMigration` — real migration tests are a Phase-7 hardening item. |
-| 2 — Content extraction | Content becomes searchable | **PARTIAL** | PdfBox text layer + ML Kit image OCR/labels + perceptual hash + thumbnail code exists. `DeepProcessingWorker` now drives the pipeline (queue → `ContentExtractor` → `FileDao.updateContent`), and `syncScan` re-enqueues changed files. Missing: scanned-PDF OCR fallback (page render + ML Kit) and batch/caching refinements. |
+| 2 — Content extraction | Content becomes searchable | **COMPLETE** | PdfBox text layer + ML Kit image OCR/labels + perceptual hash + thumbnail. `DeepProcessingWorker` drives the pipeline (queue → `ContentExtractor` → `FileDao.updateContent`); `syncScan` re-enqueues changed files. Scanned/textless PDFs now get page-rendered OCR (`ScannedPdfOcrExtractor`). Level-2 → Classified/Embedded/Indexed remain in Phases 3–4. |
 | 3 — Classification + albums | Auto-organized virtual albums | **NOT STARTED** | Only interfaces: `ClassificationEngine`, `ClassificationStrategy`, `AlbumDecision`, `AlbumRepository`. No impl, no lexicon, no scorer, no album creator, no suggestions UI. |
 | 4 — Embeddings + semantic search | Semantic retrieval | **NOT STARTED** | Only `EmbeddingCodec` + `EmbeddingDao` + `EmbeddingRepository` interface. No LiteRT `EmbeddingModelManager`, generator, representative-text builder, or chunked vector search. No model file bundled. |
 | 5 — Hybrid search | Fused explainable ranking | **NOT STARTED** | FTS `SearchDao` + `SearchRepository` interface + `QueryIntentParser` interface only. No orchestrator, score fusion, or ranking. No Search UI. |
@@ -57,7 +57,6 @@ is drained from a persistent queue → counts/index show on Home.
 - Hybrid search: `HybridSearchOrchestrator`, `ScoreFusion`, real `QueryIntentParser`, explanation signals.
 - Duplicates: exact (SHA-256), perceptual, semantic-version finders + review flow + "not a duplicate" memory.
 - Related files engine + corrections/personalization (`CorrectionProcessor`).
-- Scanned-PDF OCR fallback (page render + ML Kit).
 - Tests (unit/Room/worker/storage/ML), lint, formatting, macrobenchmarks.
 - `docs/IMPLEMENTATION_STATUS.md` now exists (this file).
 
@@ -73,7 +72,7 @@ is drained from a persistent queue → counts/index show on Home.
 ## Recommended next steps
 
 1. ~~Commit the Phase-0 baseline~~ (done: `faece1d` "first commit", pushed to `origin/main`).
-2. Commit Phase 1 (this tree) once verified.
-3. Complete Phase 2: scanned-PDF OCR fallback (page render + ML Kit), then wire `batchId`/caching refinements if needed.
+2. ~~Commit Phase 1~~ (done: `1948e28` "Phase 1: storage + database", pushed to `origin/main`).
+3. ~~Commit Phase 2~~ (scanned-PDF OCR fallback compiles + `assembleDebug` green).
 4. Then Phases 3–6 (classification/albums, embeddings, hybrid search, intelligence), each with its UI + tests.
 5. Phase 7 hardening: migrations + migration tests, unit/Room/worker/ML tests, lint, profiling on the 4 GB reference device.

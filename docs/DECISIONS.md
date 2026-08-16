@@ -75,6 +75,16 @@ Clean architecture, one Gradle module per boundary (per LLD §2):
 - ML Kit task awaits via `kotlinx-coroutines-play-services`.
 - AI/ML models are only reachable behind `domain.ContentExtractor` and related
   interfaces; no model code leaks into the UI.
+- **Scanned-PDF OCR renders pages with pdfbox-android, not the platform
+  `android.graphics.PdfRenderer`.** The platform class moved to
+  `android.graphics.pdf` in API 35/36 and is unavailable on the lower API
+  levels SmartFiles supports, while pdfbox-android's
+  `PDFRenderer.renderImageWithDPI` returns an `android.graphics.Bitmap` on all
+  supported API levels. Textless/tiny-text PDFs fall back to per-page OCR via
+  `ScannedPdfOcrExtractor` (stage the PDF to `context.cacheDir`, render at up to
+  ~160 DPI capped at 2500 px, `MlKitEngine.recognise` per page, cap 30 pages;
+  staged file always deleted in `finally`). Extraction source and average OCR
+  confidence are recorded on the result.
 
 ## Build performance (host constraints)
 

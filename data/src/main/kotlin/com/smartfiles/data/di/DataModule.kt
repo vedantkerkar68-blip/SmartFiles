@@ -17,6 +17,7 @@ import com.smartfiles.core.filesystem.MediaStoreFileDiscoverySource
 import com.smartfiles.core.filesystem.SafFileSource
 import com.smartfiles.core.ml.ContentExtractorImpl
 import com.smartfiles.core.ml.PdfBoxTextExtractor
+import com.smartfiles.core.ml.ScannedPdfOcrExtractor
 import com.smartfiles.data.logging.AndroidAppLogger
 import com.smartfiles.domain.FileSource
 import com.smartfiles.domain.MediaFileDiscoverySource
@@ -79,9 +80,17 @@ object DataModule {
 
     @Provides
     @Singleton
+    fun provideScannedPdfOcrExtractor(
+        @ApplicationContext context: Context,
+        logger: AppLogger,
+    ): ScannedPdfOcrExtractor = ScannedPdfOcrExtractor(context, logger)
+
+    @Provides
+    @Singleton
     fun provideContentExtractor(
         @ApplicationContext context: Context,
         pdf: PdfBoxTextExtractor,
+        scannedPdfOcr: ScannedPdfOcrExtractor,
         logger: AppLogger,
-    ): com.smartfiles.domain.ContentExtractor = ContentExtractorImpl(context, pdf, logger)
+    ): com.smartfiles.domain.ContentExtractor = ContentExtractorImpl(context, pdf, scannedPdfOcr, logger)
 }
