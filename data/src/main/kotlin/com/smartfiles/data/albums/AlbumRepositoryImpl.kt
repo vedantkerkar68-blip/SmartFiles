@@ -11,6 +11,7 @@ import com.smartfiles.core.model.AlbumSuggestion
 import com.smartfiles.core.model.AlbumType
 import com.smartfiles.core.model.AssignmentSource
 import com.smartfiles.domain.AlbumRepository
+import com.smartfiles.domain.EmbeddingRepository
 import com.smartfiles.domain.SettingsRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -32,6 +33,7 @@ class AlbumRepositoryImpl @Inject constructor(
     private val fileDao: FileDao,
     private val settingsRepository: SettingsRepository,
     private val localStrategy: LocalClassificationStrategy,
+    private val embeddingRepository: EmbeddingRepository,
     private val logger: AppLogger,
 ) : AlbumRepository {
 
@@ -118,17 +120,18 @@ class AlbumRepositoryImpl @Inject constructor(
         val candidates = fileDao.classificationCandidates(CANDIDATE_LIMIT)
         val members = candidates.mapNotNull { c ->
             c.extractedText?.takeIf { it.isNotBlank() }
-                ?.let { ClusterMember(c.fileId, c.displayName, TermProfiles.of(it)) }
+                ?.let { ClusterMember(c.fileId, c.displayName, TermProfiles.of(it), embeddingRepository.vectorFor(c.fileId)) }
         }
         if (members.size < MIN_SUGGEST_CLUSTER) return
 
         val creator = DynamicAlbumCreator()
         for (cluster in Clusterer.greedy(members, GREEDY_MIN_SIMILARITY)) {
             if (cluster.size < MIN_SUGGEST_CLUSTER) continue
-            when (creator.evaluate(cluster, settings, maxSimilarityToExisting = null)) {
-                // maxSimilarityToExisting stays null until Phase 4 provides album
-                // centroids, so the distinctness gate holds AUTO_CREATE back —
-                // the suggest path still runs and surfaces the cluster to the user.
+            // Distinctness evidence comes from album centroids; null when none
+            // exist yet, which gates AUTO_CREATE off honestly (suggest still runs).
+            val maxSimilarityToExisting = creator.centroidEmbedding(cluster)
+                ?.let { embeddingRepository.closestCentroidSimilarity(it) }
+            when (creator.evaluate(cluster, settings, maxSimilarityToExisting)) {
                 NewAlbumDecision.AUTO_CREATE -> createSubAlbum(cluster, creator)
                 NewAlbumDecision.SUGGEST_TO_USER -> suggestSubAlbum(cluster, creator)
                 NewAlbumDecision.KEEP_UNCATEGORIZED -> Unit
@@ -151,6 +154,9 @@ class AlbumRepositoryImpl @Inject constructor(
         val confidence = creator.cohesionOf(cluster)
         for (member in cluster) {
             assign(member.fileId, id, confidence, AssignmentSource.AUTO)
+        }
+        if (cluster.any { it.embedding != null }) {
+            embeddingRepository.recomputeAlbumCentroid(id)
         }
         logger.i(TAG, "auto-created album '$name' with ${cluster.size} files")
     }

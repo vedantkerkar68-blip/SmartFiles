@@ -34,6 +34,22 @@ object TermProfiles {
         return if (denom > 0.0) (dot / denom).toFloat() else 0f
     }
 
+    /** Dot product of two unit vectors (cosine == dot for pre-normalized embeddings). */
+    fun cosineEmbedding(a: FloatArray, b: FloatArray): Float {
+        var dot = 0f
+        val n = minOf(a.size, b.size)
+        for (i in 0 until n) dot += a[i] * b[i]
+        return dot
+    }
+
+    fun normalize(v: FloatArray): FloatArray {
+        var norm = 0.0
+        for (x in v) norm += x * x
+        norm = sqrt(norm)
+        if (norm > 0.0) for (i in v.indices) v[i] = (v[i] / norm).toFloat()
+        return v
+    }
+
     /** Mean of profiles; null when [members] is empty. */
     fun centroid(members: List<ClusterMember>): Map<String, Float>? {
         if (members.isEmpty()) return null
@@ -50,6 +66,8 @@ data class ClusterMember(
     val fileId: Long,
     val displayName: String,
     val profile: Map<String, Float>,
+    /** Normalized embedding vector when stored (Phase 4+); null for term-only runs. */
+    val embedding: FloatArray? = null,
 )
 
 enum class NewAlbumDecision { AUTO_CREATE, SUGGEST_TO_USER, KEEP_UNCATEGORIZED }
@@ -127,18 +145,42 @@ class DynamicAlbumCreator {
         return best.key.replaceFirstChar { it.uppercase() }
     }
 
-    /** Average pairwise cosine similarity within a cluster. */
+    /** Average pairwise cosine similarity within a cluster (embeddings when available, else term profiles). */
     fun cohesionOf(cluster: List<ClusterMember>): Float {
         if (cluster.size < 2) return 0f
-        var sum = 0f
-        var pairs = 0
-        for (i in cluster.indices) {
-            for (j in i + 1 until cluster.size) {
-                sum += TermProfiles.cosine(cluster[i].profile, cluster[j].profile)
-                pairs++
+        return if (cluster.all { it.embedding != null }) {
+            val vectors = cluster.map { it.embedding!! }
+            var sum = 0f
+            var pairs = 0
+            for (i in vectors.indices) {
+                for (j in i + 1 until vectors.size) {
+                    sum += TermProfiles.cosineEmbedding(vectors[i], vectors[j])
+                    pairs++
+                }
             }
+            if (pairs == 0) 0f else sum / pairs
+        } else {
+            var sum = 0f
+            var pairs = 0
+            for (i in cluster.indices) {
+                for (j in i + 1 until cluster.size) {
+                    sum += TermProfiles.cosine(cluster[i].profile, cluster[j].profile)
+                    pairs++
+                }
+            }
+            if (pairs == 0) 0f else sum / pairs
         }
-        return if (pairs == 0) 0f else sum / pairs
+    }
+
+    /** Mean embedding of the cluster (normalized), or null when none available. */
+    fun centroidEmbedding(cluster: List<ClusterMember>): FloatArray? {
+        val vectors = cluster.mapNotNull { it.embedding }
+        if (vectors.isEmpty()) return null
+        val dim = vectors.first().size
+        if (!vectors.all { it.size == dim }) return null
+        val mean = FloatArray(dim)
+        for (v in vectors) for (i in 0 until dim) mean[i] += v[i] / vectors.size
+        return TermProfiles.normalize(mean)
     }
 
     companion object {

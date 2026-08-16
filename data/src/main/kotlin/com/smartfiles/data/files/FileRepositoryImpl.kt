@@ -101,6 +101,10 @@ class FileRepositoryImpl @Inject constructor(
         fileDao.updateStatus(fileId, ProcessingStatus.CLASSIFIED, LEVEL_CLASSIFIED)
     }
 
+    override suspend fun markEmbedded(fileId: Long) {
+        fileDao.updateStatus(fileId, ProcessingStatus.EMBEDDED, LEVEL_EMBEDDED)
+    }
+
     private fun FileEntity.toItem() = FileItem(
         fileId = fileId,
         uri = uri,
@@ -118,5 +122,6 @@ class FileRepositoryImpl @Inject constructor(
 
     companion object {
         private const val LEVEL_CLASSIFIED = 3
+        private const val LEVEL_EMBEDDED = 4
     }
 }

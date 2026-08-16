@@ -24,6 +24,8 @@ interface FileRepository {
     suspend fun classificationSource(fileId: Long): ClassificationSource?
     /** Advances a file to Level-3 (CLASSIFIED) once classification succeeds. */
     suspend fun markClassified(fileId: Long)
+    /** Advances a file to Level-4 (EMBEDDED) once its embedding is stored. */
+    suspend fun markEmbedded(fileId: Long)
 }
 
 /** Input to the classification engine (LLD §4.4 RepresentativeTextBuilder input). */

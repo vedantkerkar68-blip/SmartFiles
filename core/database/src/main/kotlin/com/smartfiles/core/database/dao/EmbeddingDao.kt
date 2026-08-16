@@ -22,6 +22,9 @@ interface EmbeddingDao {
     @Query("SELECT fileId, vector, dim FROM embeddings WHERE fileId = :fileId AND modelVersion = :modelVersion LIMIT 1")
     suspend fun getForFile(fileId: Long, modelVersion: String): EmbeddingRow?
 
+    @Query("SELECT e.fileId, e.vector, e.dim FROM embeddings e INNER JOIN file_album_cross_ref x ON x.fileId = e.fileId WHERE x.albumId = :albumId AND e.modelVersion = :modelVersion")
+    suspend fun embeddingsForAlbum(albumId: Long, modelVersion: String): List<EmbeddingRow>
+
     @Query("DELETE FROM embeddings WHERE modelVersion = :modelVersion")
     suspend fun deleteAllForModel(modelVersion: String)
 }

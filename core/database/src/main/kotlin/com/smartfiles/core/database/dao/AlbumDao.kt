@@ -94,7 +94,15 @@ interface AlbumDao {
         "UPDATE album_suggestions SET status = 'REJECTED' WHERE fileId = :fileId AND suggestedAlbumId = :albumId AND status = 'PENDING'",
     )
     suspend fun markSuggestionRejected(fileId: Long, albumId: Long)
+
+    @Query("SELECT albumId, centroidEmbedding FROM albums WHERE centroidEmbedding IS NOT NULL")
+    suspend fun albumsWithCentroids(): List<AlbumCentroidRow>
+
+    @Query("SELECT albumId FROM albums")
+    suspend fun allAlbumIds(): List<Long>
 }
+
+data class AlbumCentroidRow(val albumId: Long, val centroidEmbedding: ByteArray)
 
 data class AlbumWithCount(
     val albumId: Long,

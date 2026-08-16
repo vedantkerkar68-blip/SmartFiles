@@ -28,6 +28,7 @@ class ScanFilesUseCase @Inject constructor(
     companion object {
         const val DEFAULT_MAX_DEPTH = 8
         const val MAX_FILE_SIZE = 512L * 1024 * 1024
-        const val TARGET_LEVEL_ALL = 3
+        /** Metadata, extraction, classification, and embedding (levels 1-4). */
+        const val TARGET_LEVEL_ALL = 4
     }
 }

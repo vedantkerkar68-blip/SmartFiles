@@ -11,8 +11,10 @@ import androidx.work.WorkerParameters
 import androidx.hilt.work.HiltWorker
 import com.smartfiles.core.common.AppLogger
 import com.smartfiles.core.database.dao.QueueDao
+import com.smartfiles.core.database.dao.TagDao
 import com.smartfiles.core.database.entity.ProcessingQueueEntity
 import com.smartfiles.core.model.FileItem
+import com.smartfiles.data.embeddings.EmbeddingRepositoryImpl
 import com.smartfiles.domain.AlbumRepository
 import com.smartfiles.domain.ClassifyFileUseCase
 import com.smartfiles.domain.ContentExtractor
@@ -25,8 +27,8 @@ import kotlinx.coroutines.withContext
 
 /**
  * Drains the persistent processing queue, advancing each file through Level-2
- * content extraction (LLD §4.2, §4.10) and, for files enqueued to Level-3,
- * through classification + tagging (LLD §4.3). Batch size scales with
+ * content extraction (LLD §4.2, §4.10), Level-3 classification + tagging (LLD
+ * §4.3), and Level-4 embedding generation (LLD §4.4). Batch size scales with
  * charging+idle state. A killed/rescheduled worker resumes safely because each
  * file's result is committed to Room only after it completes. Anything enqueued
  * while the loop runs is picked up on the next iteration; stragglers/backoff are
@@ -41,6 +43,8 @@ class DeepProcessingWorker @AssistedInject constructor(
     private val contentExtractor: ContentExtractor,
     private val classifyFileUseCase: ClassifyFileUseCase,
     private val albumRepository: AlbumRepository,
+    private val embeddingRepository: EmbeddingRepositoryImpl,
+    private val tagDao: TagDao,
     private val logger: AppLogger,
 ) : CoroutineWorker(appContext, params) {
 
@@ -81,6 +85,21 @@ class DeepProcessingWorker @AssistedInject constructor(
                 classifyFileUseCase(item.fileId)
                 fileRepository.markClassified(item.fileId)
             }
+            if (item.targetLevel >= LEVEL_EMBEDDED) {
+                // Level-4: represent + embed + persist (skipped silently if the
+                // model is unavailable — keyword search still works).
+                val source = fileRepository.classificationSource(item.fileId)
+                if (source != null) {
+                    val tags = tagDao.tagNamesForFile(item.fileId)
+                    embeddingRepository.generateAndStoreFromSource(
+                        fileId = item.fileId,
+                        displayName = source.displayName,
+                        extractedText = source.extractedText,
+                        tags = tags,
+                    )
+                    fileRepository.markEmbedded(item.fileId)
+                }
+            }
             queueDao.markDone(item.queueId)
         } catch (e: Exception) {
             logger.w(TAG, "processing failed for queue item ${item.queueId}", e)
@@ -92,6 +111,9 @@ class DeepProcessingWorker @AssistedInject constructor(
     /** Best-effort cluster sweep; never fails the worker over it. */
     private suspend fun reconcileAlbums() {
         try {
+            // Keep album centroids fresh so the cluster sweep sees current
+            // distinctness evidence, then run the sweep itself.
+            embeddingRepository.recomputeAllAlbumCentroids()
             albumRepository.reconcileDynamicAlbums()
         } catch (e: Exception) {
             logger.w(TAG, "album reconciliation failed", e)
@@ -120,5 +142,6 @@ class DeepProcessingWorker @AssistedInject constructor(
         private const val RETRY_INITIAL_MS = 15_000L
         private const val MAX_EXPONENT = 4
         private const val LEVEL_CLASSIFIED = 3
+        private const val LEVEL_EMBEDDED = 4
     }
 }

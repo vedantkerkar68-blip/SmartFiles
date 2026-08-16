@@ -17,7 +17,9 @@ import com.smartfiles.core.datastore.SettingsDataStore
 import com.smartfiles.core.filesystem.MediaStoreFileDiscoverySource
 import com.smartfiles.core.filesystem.SafFileSource
 import com.smartfiles.core.ml.ContentExtractorImpl
+import com.smartfiles.core.ml.EmbeddingModelManager
 import com.smartfiles.core.ml.PdfBoxTextExtractor
+import com.smartfiles.core.ml.RepresentativeTextBuilder
 import com.smartfiles.core.ml.ScannedPdfOcrExtractor
 import com.smartfiles.data.logging.AndroidAppLogger
 import com.smartfiles.domain.FileSource
@@ -95,4 +97,16 @@ object DataModule {
         scannedPdfOcr: ScannedPdfOcrExtractor,
         logger: AppLogger,
     ): com.smartfiles.domain.ContentExtractor = ContentExtractorImpl(context, pdf, scannedPdfOcr, logger)
+
+    @Provides
+    @Singleton
+    fun provideEmbeddingModel(
+        @ApplicationContext context: Context,
+        dispatchers: CoroutineDispatchers,
+        logger: AppLogger,
+    ): EmbeddingModelManager = EmbeddingModelManager(context, dispatchers, logger)
+
+    @Provides
+    @Singleton
+    fun provideRepresentativeTextBuilder(): RepresentativeTextBuilder = RepresentativeTextBuilder()
 }

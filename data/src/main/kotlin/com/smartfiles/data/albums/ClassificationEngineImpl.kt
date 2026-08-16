@@ -3,9 +3,11 @@ package com.smartfiles.data.albums
 import com.smartfiles.core.common.AppLogger
 import com.smartfiles.core.database.dao.AlbumDao
 import com.smartfiles.core.database.dao.FileDao
+import com.smartfiles.core.ml.EmbeddingModelManager
 import com.smartfiles.core.model.DocType
 import com.smartfiles.domain.ClassificationEngine
 import com.smartfiles.domain.ClassificationResult
+import com.smartfiles.domain.EmbeddingRepository
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.math.roundToInt
@@ -13,13 +15,14 @@ import kotlin.math.roundToInt
 /**
  * Level-3 classification engine (LLD §4.3). Resolves the lexicon prediction to
  * a concrete seed album, assembles file-level evidence (keyword match, centroid
- * similarity when available, agreement among already-classified similar files),
- * scores it with [ConfidenceScorer], and returns the classification with its
- * human-readable reasoning.
+ * similarity when the embedding model is available, agreement among
+ * already-classified similar files), scores it with [ConfidenceScorer], and
+ * returns the classification with its human-readable reasoning.
  *
- * The centroid component is wired but inert until Phase 4 produces embeddings —
- * [ConfidenceScorer] renormalizes over whatever evidence is actually present, so
- * this never fabricates confidence from missing signals.
+ * The centroid component (0.35 weight) becomes live once album centroids exist —
+ * it compares the file's own MiniLM embedding to every existing album centroid.
+ * Missing evidence (no model, no centroids yet) is absorbed by [ConfidenceScorer]
+ * renormalization, so confidence is never fabricated from absent signals.
  */
 @Singleton
 class ClassificationEngineImpl @Inject constructor(
@@ -27,6 +30,8 @@ class ClassificationEngineImpl @Inject constructor(
     private val albumDao: AlbumDao,
     private val localStrategy: LocalClassificationStrategy,
     private val tagExtractor: TagExtractor,
+    private val embeddingModel: EmbeddingModelManager,
+    private val embeddingRepository: EmbeddingRepository,
     private val logger: AppLogger,
 ) : ClassificationEngine {
 
@@ -54,9 +59,10 @@ class ClassificationEngineImpl @Inject constructor(
                 return ClassificationResult()
             }
 
+        val embeddingScore = centroidScore(representativeText)
         val evidence = ConfidenceScorer.Evidence(
             categoryKeywordScore = prediction.keywordScore,
-            embeddingToCentroidScore = null, // Phase 4 (embeddings + album centroids)
+            embeddingToCentroidScore = embeddingScore,
             existingClusterAgreement = clusterAgreement(representativeText, categoryAlbum.albumId),
             userHistoryPrior = null, // Phase 6 (correction history)
         )
@@ -69,6 +75,16 @@ class ClassificationEngineImpl @Inject constructor(
             reasoning = reasoningFor(prediction, verdict),
             suggestedTags = tags,
         )
+    }
+
+    /**
+     * Cosine similarity of the file's embedding to the nearest existing album
+     * centroid; null whenever the model is off or no centroid has been computed.
+     */
+    private suspend fun centroidScore(text: String): Float? {
+        if (!embeddingModel.available) return null
+        val vector = embeddingModel.embed(text) ?: return null
+        return embeddingRepository.closestCentroidSimilarity(vector)
     }
 
     private suspend fun clusterAgreement(text: String, targetAlbumId: Long): Float? {
