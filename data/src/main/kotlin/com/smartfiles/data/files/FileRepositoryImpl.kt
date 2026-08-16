@@ -9,6 +9,8 @@ import com.smartfiles.core.database.entity.FileEntity
 import com.smartfiles.core.model.DiscoveredFile
 import com.smartfiles.core.model.FileItem
 import com.smartfiles.domain.FileRepository
+import com.smartfiles.domain.ExtractionResult
+import com.smartfiles.domain.ExtractionSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -77,6 +79,18 @@ class FileRepositoryImpl @Inject constructor(
 
     override suspend fun countIndexedFiles(): Long =
         fileDao.observeCount().first()
+
+    override suspend fun updateProcessingResult(fileId: Long, result: ExtractionResult) {
+        fileDao.updateContent(
+            fileId = fileId,
+            text = result.text,
+            ocrApplied = result.source == ExtractionSource.OCR,
+            ocrConfidence = result.ocrConfidenceAvg,
+            width = result.widthPx,
+            height = result.heightPx,
+            perceptualHash = result.perceptualHash,
+        )
+    }
 
     private fun FileEntity.toItem() = FileItem(
         fileId = fileId,

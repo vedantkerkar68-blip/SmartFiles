@@ -16,3 +16,6 @@ enum class CorrectionType { RECLASSIFY, TAG_ADD, TAG_REMOVE, DUPLICATE_REJECTED,
 enum class DuplicateGroupType { EXACT, PERCEPTUAL_NEAR, SEMANTIC_VERSION }
 
 enum class DuplicateGroupStatus { PENDING_REVIEW, RESOLVED, DISMISSED }
+
+/** Lifecycle of a granted SAF tree permission (LLD §4.11). */
+enum class FolderPermissionState { ACTIVE, NEEDS_REGRANT, REVOKED }

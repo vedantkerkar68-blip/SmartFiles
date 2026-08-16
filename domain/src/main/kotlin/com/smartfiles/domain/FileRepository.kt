@@ -18,4 +18,6 @@ interface FileRepository {
     fun observeFilesByAlbum(albumId: Long): Flow<List<FileItem>>
     suspend fun markDeletedIfMissing(existingUris: Set<String>)
     suspend fun countIndexedFiles(): Long
+    /** Persists the result of a Level-2 content extraction pass. */
+    suspend fun updateProcessingResult(fileId: Long, result: ExtractionResult)
 }

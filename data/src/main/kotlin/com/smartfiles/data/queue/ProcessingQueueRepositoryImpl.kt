@@ -3,6 +3,7 @@ package com.smartfiles.data.queue
 import com.smartfiles.core.database.dao.FileDao
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.entity.ProcessingQueueEntity
+import com.smartfiles.data.worker.WorkScheduler
 import com.smartfiles.domain.ProcessingQueueRepository
 import com.smartfiles.domain.ProcessingStatusSnapshot
 import kotlinx.coroutines.flow.Flow
@@ -14,6 +15,7 @@ import javax.inject.Inject
 class ProcessingQueueRepositoryImpl @Inject constructor(
     private val queueDao: QueueDao,
     private val fileDao: FileDao,
+    private val workScheduler: WorkScheduler,
 ) : ProcessingQueueRepository {
 
     override suspend fun enqueue(fileIds: List<Long>, targetLevel: Int, priority: Int) {
@@ -22,6 +24,8 @@ class ProcessingQueueRepositoryImpl @Inject constructor(
             .map { ProcessingQueueEntity(fileId = it, targetLevel = targetLevel, priority = priority) }
         if (items.isNotEmpty()) {
             queueDao.insertAll(items)
+            // New work exists; ensure the background worker is scheduled.
+            workScheduler.scheduleDeepProcessing()
         }
     }
 

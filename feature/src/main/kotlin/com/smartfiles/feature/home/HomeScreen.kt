@@ -79,8 +79,8 @@ fun HomeScreen(
             if (state.isScanning) {
                 CircularProgressIndicator()
             }
-            state.lastScanEnqueued?.let { enqueued ->
-                Text("Scan complete: $enqueued file(s) queued for indexing", style = MaterialTheme.typography.bodyMedium)
+            state.scanRequestedAt?.let {
+                Text("Scan scheduled in the background", style = MaterialTheme.typography.bodyMedium)
             }
             state.error?.let {
                 Spacer(Modifier.height(4.dp))

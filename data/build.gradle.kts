@@ -26,13 +26,16 @@ dependencies {
     implementation(project(":core:datastore"))
     implementation(project(":core:filesystem"))
     implementation(project(":core:ml"))
+    implementation(project(":core:workmanager"))
 
     implementation(libs.hilt.android)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.room.ktx)
     implementation(libs.datastore.preferences)
+    implementation(libs.work.runtime.ktx)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

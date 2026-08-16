@@ -34,3 +34,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
 }
+
+// Room schema export: the JSON schemas under schemas/ are the source of truth
+// for migrations (Phase 1) and migration tests (Phase 7) — commit them.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+    arg("room.incremental", "true")
+}

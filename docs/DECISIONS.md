@@ -96,3 +96,46 @@ explicit `indices = [Index(...)]` to: `FileAlbumCrossRef` (albumId),
 
 Only `FOREGROUND_SERVICE` and `POST_NOTIFICATIONS` are declared. No storage
 permissions: file access is SAF `OpenDocumentTree` only.
+
+## Background work (Phase 1)
+
+- New `core:workmanager` module holds `WorkNames` + `WorkConstraints` presets so
+  the data layer does not hardcode strings/builder flags.
+- WorkManager is configured via `SmartFilesApp : Configuration.Provider`
+  (`HiltWorkerFactory`). The default `androidx.startup.InitializationProvider`
+  is suppressed in the manifest so `@HiltWorker` classes get Hilt dependencies.
+- Workers live in `:data` (`data/worker`). The UI-facing contract is the domain
+  interface `BackgroundWorkScheduler`; `feature` never imports WorkManager.
+- `WorkManager` unique-work naming decision: the one-time immediate metadata
+  scan uses a **separate** name (`METADATA_SCAN_ONCE`, `REPLACE`) from the
+  periodic scan (`METADATA_SCAN`, `KEEP`). Reusing one name with `REPLACE`
+  would silently cancel the periodic work after the first user-triggered scan.
+- `DeepProcessingWorker` drains the queue in loops and commits each file's
+  extraction atomically (mark IN_PROGRESS → extract → update Room → mark DONE;
+  failures get exponential backoff via `nextEligibleAt`). It is re-triggered by
+  `ProcessingQueueRepositoryImpl.enqueue` and periodic scans, not by
+  self-rescheduling (which is a no-op under `UniqueWork.KEEP` while running).
+- `UserTriggeredProcessingWorker` ("process now") runs with no constraints as
+  normal unique work. A foreground-service upgrade (deep-progress notification)
+  is a later enhancement to avoid API-34 `foregroundServiceType` complexity.
+- `MetadataScanWorker` walks every ACTIVE SAF tree plus MediaStore, syncs via
+  `FileRepository.syncScan`, and enqueues changed files for deep processing.
+
+## Storage / permission lifecycle (Phase 1)
+
+- Folder grants are now a **real Room table**: `indexed_folders`,
+  schema-exported
+  (`room.schemaLocation=$projectDir/schemas`, `exportSchema=true`); committed
+  JSON under `core/database/schemas/` is the migration source of truth.
+- `FolderPermissionState { ACTIVE, NEEDS_REGRANT, REVOKED }`.
+- On grant loss the folder is flagged `NEEDS_REGRANT`; **the index is never
+  deleted** (spec §40). Re-granting restores it; removal deletes only the grant
+  row, not indexed files.
+- `takePersistableUriPermission` is best-effort: providers that cannot persist
+  a grant throw `SecurityException`, which is caught — the folder still indexes
+  for the session and `PermissionValidationWorker` flags it later if it lapses.
+- `MediaStoreFileDiscoverySource` adds Images + Downloads (API 29+) with no
+  tree grant; results de-dupe by URI. MediaStore `DATE_MODIFIED` is seconds →
+  multiplied to millis to stay consistent with the rest of the app.
+- FTS content entity `files_fts` and the new `indexed_folders` table coexist in
+  the version-1 schema; no migration needed until the schema changes.

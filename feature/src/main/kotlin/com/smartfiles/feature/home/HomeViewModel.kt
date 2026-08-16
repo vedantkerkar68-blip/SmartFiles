@@ -3,9 +3,9 @@ package com.smartfiles.feature.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.smartfiles.core.common.AppLogger
-import com.smartfiles.core.common.CoroutineDispatchers
+import com.smartfiles.domain.BackgroundWorkScheduler
 import com.smartfiles.domain.FileRepository
-import com.smartfiles.domain.ScanFilesUseCase
+import com.smartfiles.domain.FolderRepository
 import com.smartfiles.domain.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,17 +19,15 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val scanFiles: ScanFilesUseCase,
+    private val folderRepository: FolderRepository,
+    private val workScheduler: BackgroundWorkScheduler,
     settingsRepository: SettingsRepository,
     fileRepository: FileRepository,
-    dispatchers: CoroutineDispatchers,
     private val logger: AppLogger,
 ) : ViewModel() {
 
-    private val coroutineDispatchers = dispatchers
-
     private val _transient = MutableStateFlow(TransientState())
-    private var rootUris: List<String> = emptyList()
+    private var lastGrantedUri: String? = null
 
     val uiState: StateFlow<HomeUiState> = combine(
         settingsRepository.settings,
@@ -41,42 +39,56 @@ class HomeViewModel @Inject constructor(
             indexedFileCount = files.size,
             indexedAlbumCount = 0,
             isScanning = transient.isScanning,
-            lastScanEnqueued = transient.lastScanEnqueued,
+            scanRequestedAt = transient.scanRequestedAt,
             error = transient.error,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     private data class TransientState(
         val isScanning: Boolean = false,
-        val lastScanEnqueued: Int? = null,
+        val scanRequestedAt: Long? = null,
         val error: String? = null,
     )
 
     fun onEvent(event: HomeEvent) {
         when (event) {
             is HomeEvent.FolderGranted -> {
-                rootUris = listOf(event.rootUri)
-                runScan(rootUris)
+                lastGrantedUri = event.rootUri
+                persistAndScan(event.rootUri)
             }
-            is HomeEvent.Rescan -> runScan(event.rootUris)
+            is HomeEvent.Rescan -> requestScan()
         }
     }
 
-    /** Currently granted root URIs (for a manual re-scan). */
-    fun currentRootUris(): List<String> = rootUris
+    /** Most recently granted root URI (for a manual re-scan). */
+    fun currentRootUris(): List<String> = listOfNotNull(lastGrantedUri)
 
-    private fun runScan(uris: List<String>) {
-        if (uris.isEmpty()) return
-        viewModelScope.launch(coroutineDispatchers.io) {
+    private fun persistAndScan(uri: String) {
+        viewModelScope.launch {
             _transient.update { it.copy(isScanning = true, error = null) }
             try {
-                val enqueued = scanFiles(uris)
-                _transient.update { it.copy(isScanning = false, lastScanEnqueued = enqueued) }
+                // Persist the grant first so the background scan (which reads
+                // active folders from the repository) includes this tree.
+                folderRepository.addFolder(uri)
+                requestScan()
             } catch (e: Exception) {
-                logger.w(TAG, "scan failed", e)
+                logger.w(TAG, "failed to persist folder grant", e)
                 _transient.update {
-                    it.copy(isScanning = false, error = e.message ?: "Scan failed")
+                    it.copy(isScanning = false, error = e.message ?: "Could not save folder")
                 }
+            }
+        }
+    }
+
+    private fun requestScan() {
+        _transient.update { it.copy(isScanning = true, error = null) }
+        try {
+            workScheduler.scheduleImmediateMetadataScan()
+            _transient.update { it.copy(isScanning = false, scanRequestedAt = System.currentTimeMillis()) }
+        } catch (e: Exception) {
+            logger.w(TAG, "failed to schedule scan", e)
+            _transient.update {
+                it.copy(isScanning = false, error = e.message ?: "Could not schedule scan")
             }
         }
     }

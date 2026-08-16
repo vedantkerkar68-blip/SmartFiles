@@ -7,6 +7,7 @@ import com.smartfiles.core.model.CorrectionType
 import com.smartfiles.core.model.DocType
 import com.smartfiles.core.model.DuplicateGroupStatus
 import com.smartfiles.core.model.DuplicateGroupType
+import com.smartfiles.core.model.FolderPermissionState
 import com.smartfiles.core.model.ProcessingStatus
 import com.smartfiles.core.model.QueueStatus
 
@@ -34,4 +35,7 @@ object Converters {
 
     @TypeConverter fun duplicateGroupStatusToString(v: DuplicateGroupStatus) = v.name
     @TypeConverter fun stringToDuplicateGroupStatus(v: String) = DuplicateGroupStatus.valueOf(v)
+
+    @TypeConverter fun folderPermissionStateToString(v: FolderPermissionState) = v.name
+    @TypeConverter fun stringToFolderPermissionState(v: String) = FolderPermissionState.valueOf(v)
 }

@@ -45,6 +45,7 @@ dependencies {
     implementation(project(":core:filesystem"))
     implementation(project(":core:ml"))
     implementation(project(":core:designsystem"))
+    implementation(project(":core:workmanager"))
 
     implementation(platform(libs.compose.bom))
     implementation(libs.compose.ui)
@@ -59,6 +60,7 @@ dependencies {
 
     implementation(libs.hilt.android)
     implementation(libs.hilt.navigation.compose)
+    implementation(libs.hilt.work)
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.coroutines.android)

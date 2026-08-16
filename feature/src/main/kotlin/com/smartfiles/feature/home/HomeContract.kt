@@ -8,7 +8,8 @@ data class HomeUiState(
     val indexedFileCount: Int = 0,
     val indexedAlbumCount: Int = 0,
     val isScanning: Boolean = false,
-    val lastScanEnqueued: Int? = null,
+    /** Epoch millis when the last background scan was requested. */
+    val scanRequestedAt: Long? = null,
     val error: String? = null,
 )
 

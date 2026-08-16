@@ -6,7 +6,6 @@ import android.provider.DocumentsContract
 import androidx.documentfile.provider.DocumentFile
 import com.smartfiles.core.common.AppLogger
 import com.smartfiles.core.model.DiscoveredFile
-import com.smartfiles.core.model.DocType
 import com.smartfiles.domain.FileSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -80,17 +79,10 @@ class SafFileSource(
                     sizeBytes = child.length() ?: 0L,
                     dateModifiedSource = child.lastModified() ?: 0L,
                     parentDocumentId = DocumentsContract.getDocumentId(child.uri),
-                    docType = docTypeFor(mime),
+                    docType = MimeTypeMapper.docTypeFor(mime),
                 )
             }
         }
-    }
-
-    private fun docTypeFor(mime: String): DocType = when {
-        mime == "application/pdf" -> DocType.PDF
-        mime.startsWith("image/") -> DocType.IMAGE
-        mime == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> DocType.DOCX
-        else -> DocType.OTHER
     }
 
     companion object {

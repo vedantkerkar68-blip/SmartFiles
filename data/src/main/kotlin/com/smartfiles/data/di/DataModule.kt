@@ -9,14 +9,17 @@ import com.smartfiles.core.database.AppDatabase
 import com.smartfiles.core.database.dao.AlbumDao
 import com.smartfiles.core.database.dao.EmbeddingDao
 import com.smartfiles.core.database.dao.FileDao
+import com.smartfiles.core.database.dao.FolderDao
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.dao.SearchDao
 import com.smartfiles.core.datastore.SettingsDataStore
+import com.smartfiles.core.filesystem.MediaStoreFileDiscoverySource
 import com.smartfiles.core.filesystem.SafFileSource
 import com.smartfiles.core.ml.ContentExtractorImpl
 import com.smartfiles.core.ml.PdfBoxTextExtractor
 import com.smartfiles.data.logging.AndroidAppLogger
 import com.smartfiles.domain.FileSource
+import com.smartfiles.domain.MediaFileDiscoverySource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -40,6 +43,7 @@ object DataModule {
     @Provides fun provideEmbeddingDao(db: AppDatabase): EmbeddingDao = db.embeddingDao()
     @Provides fun provideQueueDao(db: AppDatabase): QueueDao = db.queueDao()
     @Provides fun provideSearchDao(db: AppDatabase): SearchDao = db.searchDao()
+    @Provides fun provideFolderDao(db: AppDatabase): FolderDao = db.folderDao()
 
     @Provides
     @Singleton
@@ -58,6 +62,13 @@ object DataModule {
     @Singleton
     fun provideFileSource(@ApplicationContext context: Context, logger: AppLogger): FileSource =
         SafFileSource(context, logger)
+
+    @Provides
+    @Singleton
+    fun provideMediaFileDiscoverySource(
+        @ApplicationContext context: Context,
+        logger: AppLogger,
+    ): MediaFileDiscoverySource = MediaStoreFileDiscoverySource(context, logger)
 
     @Provides
     @Singleton

@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import com.smartfiles.core.database.dao.AlbumDao
 import com.smartfiles.core.database.dao.EmbeddingDao
 import com.smartfiles.core.database.dao.FileDao
+import com.smartfiles.core.database.dao.FolderDao
 import com.smartfiles.core.database.dao.QueueDao
 import com.smartfiles.core.database.dao.SearchDao
 import com.smartfiles.core.database.entity.AlbumEntity
@@ -16,6 +17,7 @@ import com.smartfiles.core.database.entity.FileAlbumCrossRef
 import com.smartfiles.core.database.entity.FileEntity
 import com.smartfiles.core.database.entity.FileFtsEntity
 import com.smartfiles.core.database.entity.FileTagCrossRef
+import com.smartfiles.core.database.entity.IndexedFolderEntity
 import com.smartfiles.core.database.entity.ProcessingQueueEntity
 import com.smartfiles.core.database.entity.TagEntity
 import com.smartfiles.core.database.entity.UserCorrectionEntity
@@ -32,12 +34,13 @@ import com.smartfiles.core.database.entity.UserCorrectionEntity
         UserCorrectionEntity::class,
         DuplicateGroupEntity::class,
         DuplicateGroupMemberEntity::class,
+        IndexedFolderEntity::class,
         FileFtsEntity::class,
     ],
     version = 1,
-    // exportSchema is toggled off for now; enable with a schemaLocation KSP arg
-    // in Phase 1 when migration tests are introduced.
-    exportSchema = false,
+    // Schema JSON is exported to core/database/schemas (KSP room.schemaLocation)
+    // and is the basis for migrations + migration tests.
+    exportSchema = true,
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
@@ -46,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun embeddingDao(): EmbeddingDao
     abstract fun queueDao(): QueueDao
     abstract fun searchDao(): SearchDao
+    abstract fun folderDao(): FolderDao
 
     companion object {
         const val NAME = "smartfiles.db"
